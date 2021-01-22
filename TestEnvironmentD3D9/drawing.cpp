@@ -46,23 +46,22 @@ std::vector< ID3DXFont* > fonts = {};
 void DrawTextC(const char* text, float x, float y, int size, D3DCOLOR color, LPDIRECT3DDEVICE9 pDevice) {
 	RECT rect;
 	size -= 1;
-	if (size < 1 || size > 20) {
-		return;
+	if (size < 1) {
+		size = 1;
+	}
+	if (size > 20) {
+		size = 20;
 	}
 
 	if (initFonts) {
 		for (int i = 0; i < 20; i++) {
 			ID3DXFont* tmpFont;
-			D3DXCreateFont(pDevice, i, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas", &tmpFont);
+			D3DXCreateFont(pDevice, i, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas", &tmpFont);
 			std::cout << i << std::endl;
 			fonts.push_back(tmpFont);
 		}
 		initFonts = false;
 	}
-
-	//SetRect(&rect, x + 1, y + 1, x + 1, y + 1);
-	//FontF->DrawTextA(NULL, text, -1, &rect, DT_LEFT | DT_NOCLIP, D3DCOLOR_ARGB(255, 0, 0, 0));
-
 
 	SetRect(&rect, x, y, x, y);
 	fonts[size]->DrawTextA(NULL, text, -1, &rect, DT_LEFT | DT_NOCLIP, color);

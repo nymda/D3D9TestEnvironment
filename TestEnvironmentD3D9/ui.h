@@ -139,7 +139,7 @@ namespace fennUi {
 				*val = false;
 			}
 
-			DrawTextC(label, relPos.x + 5, relPos.y + 2, 18, black, pDev);
+			DrawTextC(label, relPos.x + 5, relPos.y + 2, 16, black, pDev);
 		}
 	};
 
@@ -180,15 +180,9 @@ namespace fennUi {
 				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
 			}
 
-			if (*val) {
-				DrawFilledRect(relPos.x + 2, relPos.y + 2, size.y - 4, size.y - 4, green, pDev);
-			}
-			else {
-				DrawFilledRect(relPos.x + 2, relPos.y + 2, size.y - 4, size.y - 4, red, pDev);
-			}
+			DrawFilledRect(relPos.x + 2, relPos.y + 2, size.y - 4, size.y - 4, grey, pDev);
 
-
-
+			if (*val) { DrawFilledRect(relPos.x + 4, relPos.y + 4, size.y - 8, size.y - 8, white, pDev); }
 
 			DrawTextC(label, relPos.x + (size.y - 4) + 5, relPos.y + 2, 18, black, pDev);
 		}
@@ -289,7 +283,7 @@ namespace fennUi {
 			DrawFilledRect(position.x, position.y, size.x, size.y, grey, pDev);
 			DrawFilledRect(position.x + size.x - 20, position.y + size.y - 20, 20, 20, white, pDev);
 			DrawTextC(label, position.x + 5, position.y + 2, 20, white, pDev);
-			DrawLine(position.x, position.y + 25, position.x + size.x, position.y + 25, 2, white, pDev);
+			DrawLine(position.x, position.y + 25, position.x + size.x, position.y + 25, 1, white, pDev);
 
 			int yoff = 32;
 
@@ -305,6 +299,11 @@ namespace fennUi {
 				i.draw(ehnd, pDev, position);
 				yoff += 25;
 			}
+
+			DrawLine(position.x, position.y, (position.x + size.x), position.y, 1, white, pDev); //top
+			DrawLine(position.x, position.y, position.x , position.y + size.y, 1, white, pDev); //left
+			DrawLine(position.x + size.x, position.y, position.x + size.x, position.y + size.y, 1, white, pDev); //right
+			DrawLine(position.x, position.y + size.y, position.x + size.x, position.y + size.y, 1, white, pDev); //bottom
 		}
 	};
 

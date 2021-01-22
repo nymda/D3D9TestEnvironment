@@ -21,6 +21,23 @@ ID3DXSprite* pSprite = nullptr;
 char szDevice[256]{ 0 };
 char exTimeTxt[256]{ 0 };
 char mps[128]{ 0 };
+WNDPROC oWndProc;
+
+bool drawMenu = false;
+LRESULT APIENTRY hWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_KEYDOWN:
+		if (wParam == VK_F1 || wParam == VK_INSERT)
+		{
+			drawMenu = !drawMenu;
+			return true;
+		}
+	}
+
+	return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
+}
 
 bool InitD3D(HWND hWnd, UINT uWidth, UINT uHeight)
 {
@@ -55,12 +72,14 @@ bool InitD3D(HWND hWnd, UINT uWidth, UINT uHeight)
 
 fennUi::externalHandler exhndlr;
 fennUi::basicWindow window1;
+fennUi::basicWindow window2;
 bool firstFrame = true;
 bool checkboxTest = false;
 bool singleTest = false;
 bool constTest = false;
 fennUi::packagedText plt = { "" };
 
+INT64 clickCount = 1;
 INT64 frameCounter = 0;
 void Render(NativeWindow& wnd, HWND hWnd)
 {
@@ -68,7 +87,7 @@ void Render(NativeWindow& wnd, HWND hWnd)
 	frameCounter += 1;
 
 	pDevice->BeginScene();
-	pDevice->Clear( 1, nullptr, D3DCLEAR_TARGET, 0x00111111, 1.0f, 0 );
+	pDevice->Clear( 1, nullptr, D3DCLEAR_TARGET, black, 1.0f, 0 );
 
 	RECT rc_dev = { 0, 0, WND_WIDTH, WND_HEIGHT };
 	RECT rc_time = { 0, 25, WND_WIDTH, WND_HEIGHT };
@@ -76,26 +95,23 @@ void Render(NativeWindow& wnd, HWND hWnd)
 	exhndlr.update(hWnd);
 
 	if (firstFrame) {
-		window1.init("Window 1", { 200, 100 }, { 200, 200 }, 0, pDevice);
-		window1.addButton("Single", { 5, 32 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &singleTest);
-		window1.addButton("Constant", { 5, 57 }, { 100, 20 }, fennUi::buttonMode::BMODE_CONSTANT, &constTest);
-		window1.addCheckbox("Checkbox", { 5, 83 }, { 100, 20 }, &checkboxTest);
-		window1.addLabel(&plt, { 110, 31 }, 18);
+		window1.init("FennHooks", { 200, 100 }, { 250, 200 }, 0, pDevice);
+		window1.addButton("Single", { 5, 31 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &singleTest);
+		window1.addButton("Constant", { 5, 56 }, { 100, 20 }, fennUi::buttonMode::BMODE_CONSTANT, &constTest);
+		window1.addCheckbox("Checkbox", { 5, 82 }, { 100, 20 }, &checkboxTest);
+		window1.addLabel(&plt, { 110, 31 }, 15);
 		firstFrame = false;
 	}
 
-	window1.draw(&exhndlr);
-	
-	if (singleTest) {
-		std::cout << "Frame: " << frameCounter << " SINGLE PRESS" << std::endl;
-		plt = { "clicked!" };
-	}
-	if (constTest) {
-		std::cout << "Frame: " << frameCounter << " CONSTANT PRESS" << std::endl;
-		plt = { "Held!" };
-	}
-	else {
-		plt = { "Idle" };
+	if (drawMenu) {
+		window1.draw(&exhndlr);
+		if (singleTest) {
+			clickCount++;
+		}
+		if (constTest) {
+			clickCount++;
+		}
+		sprintf_s(plt.labelText, 128, "clicks: %i", clickCount);
 	}
 
 
@@ -104,8 +120,8 @@ void Render(NativeWindow& wnd, HWND hWnd)
 	//background info
 	sprintf_s(exTimeTxt, 256, "FPS    : %i", (int)(1000.f / execTime));
 	sprintf_s(mps, 64, "MPX: %i | MPY: %i", exhndlr.frameMousePos.x, exhndlr.frameMousePos.y);
-	DrawTextC(szDevice, 10, 10, 15, white, pDevice);
-	DrawTextC(exTimeTxt, 10, 30, 15, white, pDevice);
+	DrawTextC("D3D9 Test Environment | [F1] Menu", 10, 10, 15, white, pDevice);
+	DrawTextC(exTimeTxt, 10, 25, 15, white, pDevice);
 
 	//mouse cursor
 	fennUi::drawCursor(&exhndlr, pDevice);
@@ -139,6 +155,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	if (!InitD3D( wnd.GetHandle(), WND_WIDTH, WND_HEIGHT ))
 		return 1;
+
+	oWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(wnd.GetHandle(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hWndProc)));
 
 	MSG m;
 	while (true)
