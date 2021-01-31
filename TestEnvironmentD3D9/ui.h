@@ -38,6 +38,7 @@ namespace fennUi {
 		int focusedId = -1;
 		int focusedFunction = -1;
 		bool mouseIsOnControl = false;
+		bool controlIsInUse = false;
 
 		void update(HWND hWnd) {
 			lastMouseDown = mouseDown;
@@ -57,7 +58,6 @@ namespace fennUi {
 		m_pD3Ddev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 		m_pD3Ddev->DrawPrimitiveUP(D3DPT_LINELIST, 1, &pVertex, sizeof(Vert));
 	}
-
 
 	void drawCursor(externalHandler* pmg, LPDIRECT3DDEVICE9 pDev) {
 
@@ -96,19 +96,20 @@ namespace fennUi {
 		pDev->DrawPrimitiveUP(D3DPT_LINESTRIP, 5, pVertexOutline, sizeof(Vert));
 	}
 
-
 	bool isPointInRegion(vec2 point, vec2 top, int width, int height) {
 		if (point.x > top.x && point.y > top.y && point.x < (top.x + width) && point.y < (top.y + height)) {
 			return true;
 		}
 		return false;
 	}
+
 	bool mouseHasJustClicked(externalHandler* pmg) {
 		if (pmg->mouseDown != pmg->lastMouseDown && !pmg->lastMouseDown) {
 			return true;
 		}
 		return false;
 	}
+
 	vec2 getOffset(vec2 cursor, vec2 wndPos) {
 		return { cursor.x - wndPos.x, cursor.y - wndPos.y };
 	}
@@ -257,6 +258,7 @@ namespace fennUi {
 
 			if (this->isHover(ehnd) || hold) {
 				ehnd->mouseIsOnControl = true;
+				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, lightGrey, pDev);
 				if (ehnd->mouseDown) {
 					hold = true;
 					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
@@ -275,10 +277,14 @@ namespace fennUi {
 					sliderPosOffset = newPosOffset;
 				}
 			}
+			else {
+				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
+			}
+
 			if (!ehnd->mouseDown) {
 				hold = false;
 			}
-			DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
+			
 			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
 			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
@@ -315,6 +321,7 @@ namespace fennUi {
 
 			if (this->isHover(ehnd) || hold) {
 				ehnd->mouseIsOnControl = true;
+				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, lightGrey, pDev);
 				if (ehnd->mouseDown) {
 					hold = true;
 					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
@@ -333,11 +340,14 @@ namespace fennUi {
 					sliderPosOffset = newPosOffset;
 				}
 			}
+			else {
+				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
+			}
+
 			if (!ehnd->mouseDown) {
 				hold = false;
 			}
 
-			DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
 			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
 			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
