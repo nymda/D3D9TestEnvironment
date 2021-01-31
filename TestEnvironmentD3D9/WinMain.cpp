@@ -10,7 +10,6 @@
 
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
-
 float execTime = 0.f;
 std::chrono::high_resolution_clock execTimer;
 
@@ -72,15 +71,28 @@ bool InitD3D(HWND hWnd, UINT uWidth, UINT uHeight)
 
 fennUi::externalHandler exhndlr;
 fennUi::basicWindow window1;
-fennUi::basicWindow window2;
+fennUi::container ctlButtons;
+fennUi::container ct1;
+fennUi::container ct2;
+fennUi::container ct3;
+
+bool showP1 = false;
+bool showP2 = false;
+bool showP3 = false;
+
+bool idc = false;
+
 bool firstFrame = true;
 bool checkboxTest = false;
-bool singleTest = false;
 bool constTest = false;
 fennUi::packagedText plt = { "" };
 
 INT64 clickCount = 1;
 INT64 frameCounter = 0;
+
+IDirect3DVertexBuffer9* g_pVb = nullptr;
+IDirect3DTexture9* Primitive = NULL;
+
 void Render(NativeWindow& wnd, HWND hWnd)
 {
 	auto startTime = execTimer.now();
@@ -92,43 +104,58 @@ void Render(NativeWindow& wnd, HWND hWnd)
 	RECT rc_dev = { 0, 0, WND_WIDTH, WND_HEIGHT };
 	RECT rc_time = { 0, 25, WND_WIDTH, WND_HEIGHT };
 
-	exhndlr.update(hWnd);
-
 	if (firstFrame) {
-		window1.init("FennHooks", { 200, 100 }, { 250, 200 }, 0, pDevice);
-		window1.addButton("Single", { 5, 31 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &singleTest);
-		window1.addButton("Constant", { 5, 56 }, { 100, 20 }, fennUi::buttonMode::BMODE_CONSTANT, &constTest);
-		window1.addCheckbox("Checkbox", { 5, 82 }, { 100, 20 }, &checkboxTest);
-		window1.addLabel(&plt, { 110, 31 }, 15);
+		window1.init("FennUI", { 200, 100 }, { 320, 260 }, 0, pDevice);
+		window1.resizable = false;
+
+		ctlButtons.init({ 5, 30 }, { 310, 20 }, 1, pDevice);
+		ctlButtons.addButton("ESP",  { 0,   0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP1);
+		ctlButtons.addButton("AIM",  { 105, 0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP2);
+		ctlButtons.addButton("MISC", { 210, 0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP3);
+
+		ct1.init({ 5, 55 }, { 310, 200 }, 2, pDevice);
+		ct1.addBasicLabel("ESP", { 5, 5 }, 15);
+		ct1.addCheckbox("Friendlies", { 5, 25 }, { 125, 20 }, &idc);
+		ct1.addCheckbox("Enemies", { 5, 50 }, { 125, 20 }, &idc);
+		ct1.addFloatSlider("na", { 5, 75 }, { 200, 20 }, 1);
+		ct1.addIntSlider("na", { 5, 100 }, { 200, 20 }, 100);
+		ct1.outline = true;
+		ct1.enabled = true;
+
+		ct2.init({ 5, 55 }, { 310, 200 }, 3, pDevice);
+		ct2.addBasicLabel("this is page 2", { 5, 5 }, 15);
+		ct2.addCheckbox("Checkbox", { 5, 25 }, { 100, 20 }, &idc);
+		ct2.outline = true;
+		ct2.enabled = false;
+
+		window1.addContainer(&ctlButtons);
+		window1.addContainer(&ct1);
+		window1.addContainer(&ct2);
 		firstFrame = false;
 	}
 
+	exhndlr.update(hWnd);
+
 	if (drawMenu) {
 		window1.draw(&exhndlr);
-		if (singleTest) {
-			clickCount++;
+		if (showP1) {
+			ct1.enabled = true;
+			ct2.enabled = false;
 		}
-		if (constTest) {
-			clickCount++;
+		else if (showP2) {
+			ct1.enabled = false;
+			ct2.enabled = true;
 		}
-		sprintf_s(plt.labelText, 128, "clicks: %i", clickCount);
 	}
-
-
-	//end of hook code
 
 	//background info
 	sprintf_s(exTimeTxt, 256, "FPS    : %i", (int)(1000.f / execTime));
 	sprintf_s(mps, 64, "MPX: %i | MPY: %i", exhndlr.frameMousePos.x, exhndlr.frameMousePos.y);
 	DrawTextC("D3D9 Test Environment | [F1] Menu", 10, 10, 15, white, pDevice);
 	DrawTextC(exTimeTxt, 10, 25, 15, white, pDevice);
-
-	//mouse cursor
 	fennUi::drawCursor(&exhndlr, pDevice);
-
 	pDevice->EndScene();
 	pDevice->Present( 0, 0, 0, 0 );
-
 	auto endTime = execTimer.now();
 	auto exTime = endTime - startTime;
 	execTime = (std::chrono::duration_cast<std::chrono::microseconds>(exTime).count() / 1000.f);
@@ -174,3 +201,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	return 0;
 }
+
+//auto startTime_tmp = execTimer.now();
+//auto endTime_tmp = execTimer.now();
+//auto exTime_tmp = endTime_tmp - startTime_tmp;
+//float execTimeTmp = (std::chrono::duration_cast<std::chrono::microseconds>(exTime_tmp).count());
+//std::cout << std::to_string(execTimeTmp) << std::endl;

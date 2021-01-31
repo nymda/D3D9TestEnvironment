@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="drawing.h" />
     <ClInclude Include="NativeWindow.h" />
+    <ClInclude Include="structs.h" />
     <ClInclude Include="ui.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

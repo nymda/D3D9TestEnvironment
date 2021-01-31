@@ -8,6 +8,8 @@
 namespace fennUi {
 	//run on a loop - as in imgui
 
+
+
 	enum buttonMode {
 		BMODE_SINGLE,
 		BMODE_CONSTANT
@@ -15,30 +17,12 @@ namespace fennUi {
 
 	POINT GetMousePos(HWND hWnd)
 	{
-		//ShowCursor(FALSE);
+		ShowCursor(FALSE);
 		POINT cursorPos;
 		GetCursorPos(&cursorPos);
 		ScreenToClient(hWnd, &cursorPos);
-		if (cursorPos.x > 1279) {
-			cursorPos.x = 1279;
-		}
-		else if (cursorPos.x < 0) {
-			cursorPos.x = 0;
-		}
-		if (cursorPos.y > 719) {
-			cursorPos.y = 719;
-		}
-		else if (cursorPos.y < 0) {
-			cursorPos.y = 0;
-		}
 		return cursorPos;
 	}
-
-	struct vec2 {
-		float x;
-		float y;
-	};
-
 
 	struct preservedInfo {
 		int uid;
@@ -53,6 +37,7 @@ namespace fennUi {
 		bool lastMouseDown = false;
 		int focusedId = -1;
 		int focusedFunction = -1;
+		bool mouseIsOnControl = false;
 
 		void update(HWND hWnd) {
 			lastMouseDown = mouseDown;
@@ -66,9 +51,52 @@ namespace fennUi {
 		}
 	};
 
-	void drawCursor(externalHandler* pmg, LPDIRECT3DDEVICE9 pDev) {
-		DrawFilledRect(pmg->frameMousePos.x - 1, pmg->frameMousePos.y - 1, 3, 3, red, pDev);
+	void DrawLine2(IDirect3DDevice9* m_pD3Ddev, float X, float Y, float X2, float Y2, D3DCOLOR Color)
+	{
+		Vert pVertex[2] = { { X, Y, 0.0f, 1.0f, Color }, { X2, Y2, 0.0f, 1.0f, Color } };
+		m_pD3Ddev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+		m_pD3Ddev->DrawPrimitiveUP(D3DPT_LINELIST, 1, &pVertex, sizeof(Vert));
 	}
+
+
+	void drawCursor(externalHandler* pmg, LPDIRECT3DDEVICE9 pDev) {
+
+		float X = pmg->frameMousePos.x;
+		float Y = pmg->frameMousePos.y;
+
+		Vert cursorMain_W = { X, Y, 0.0f, 1.0f, white };
+		Vert cursorBL_W = { X + 6, Y + 16, 0.0f, 1.0f, white };
+		Vert cursorC_W = { X + 9, Y + 9, 0.0f, 1.0f, white };
+		Vert cursorBR_W = { X + 16, Y + 6, 0.0f, 1.0f, white };
+
+		Vert cursorMain_B = { X, Y, 0.0f, 1.0f, black };
+		Vert cursorBL_B = { X + 6, Y + 16, 0.0f, 1.0f, black };
+		Vert cursorC_B = { X + 9, Y + 9, 0.0f, 1.0f, black };
+		Vert cursorBR_B = { X + 16, Y + 6, 0.0f, 1.0f, black };
+
+		Vert pVertex[6] = {
+			cursorMain_W,
+			cursorBL_W,
+			cursorC_W,
+			cursorMain_W,
+			cursorBR_W,
+			cursorC_W,
+		};
+
+		Vert pVertexOutline[5] = {
+			cursorMain_B,
+			cursorBL_B,
+			cursorC_B,
+			cursorBR_B,
+			cursorMain_B,
+		};
+
+		pDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+		pDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 6, pVertex, sizeof(Vert));
+		pDev->DrawPrimitiveUP(D3DPT_LINESTRIP, 5, pVertexOutline, sizeof(Vert));
+	}
+
+
 	bool isPointInRegion(vec2 point, vec2 top, int width, int height) {
 		if (point.x > top.x && point.y > top.y && point.x < (top.x + width) && point.y < (top.y + height)) {
 			return true;
@@ -76,7 +104,7 @@ namespace fennUi {
 		return false;
 	}
 	bool mouseHasJustClicked(externalHandler* pmg) {
-		if (pmg->mouseDown != pmg->lastMouseDown) {
+		if (pmg->mouseDown != pmg->lastMouseDown && !pmg->lastMouseDown) {
 			return true;
 		}
 		return false;
@@ -114,6 +142,10 @@ namespace fennUi {
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition, int yOffset) {
 			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
 
+			if (this->isHover(ehnd)) {
+				ehnd->mouseIsOnControl = true;
+			}
+
 			if (this->isHover(ehnd) && this->isClicked(ehnd)) {
 				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, darkGrey, pDev);
 				if (mode == BMODE_SINGLE) {
@@ -140,6 +172,8 @@ namespace fennUi {
 			}
 
 			DrawTextC(label, relPos.x + 5, relPos.y + 2, 16, black, pDev);
+
+			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
 	};
 
@@ -166,6 +200,9 @@ namespace fennUi {
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition, int yOffset) {
 			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
 
+			if (this->isHover(ehnd)) {
+				ehnd->mouseIsOnControl = true;
+			}
 
 			if (this->isHover(ehnd) && this->isClicked(ehnd)) {
 				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, darkGrey, pDev);
@@ -185,6 +222,125 @@ namespace fennUi {
 			if (*val) { DrawFilledRect(relPos.x + 4, relPos.y + 4, size.y - 8, size.y - 8, white, pDev); }
 
 			DrawTextC(label, relPos.x + (size.y - 4) + 5, relPos.y + 2, 18, black, pDev);
+
+			drawRect(relPos, size.x, size.y - 1, black, pDev);
+		}
+	};
+
+	class floatSlider {
+		float sliderPosOffset = 0;
+		bool hold = false;
+
+	public:
+		const char* label;
+		vec2 position;
+		vec2 size;
+		vec2 relPos;
+		float max;
+		float current;
+
+		bool isHover(externalHandler* ehnd) {
+			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
+				return true;
+			}
+		}
+
+		bool isClicked(externalHandler* ehnd) {
+			if (isHover(ehnd) && ehnd->mouseDown) {
+				return true;
+			}
+		}
+
+		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition) {
+			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
+			float pixelValue = max / (size.x - 20);
+
+			if (this->isHover(ehnd) || hold) {
+				ehnd->mouseIsOnControl = true;
+				if (ehnd->mouseDown) {
+					hold = true;
+					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
+					if (newPosOffset < 0.f) {
+						newPosOffset = 0.f;
+						current = 0.f;
+					}
+					else if (newPosOffset > size.x - 21) {
+						newPosOffset = size.x - 21;
+						current = max;
+					}
+					else {
+						current = (pixelValue * newPosOffset);
+					}
+					
+					sliderPosOffset = newPosOffset;
+				}
+			}
+			if (!ehnd->mouseDown) {
+				hold = false;
+			}
+			DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
+			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
+			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
+			drawRect(relPos, size.x, size.y - 1, black, pDev);
+		}
+	};
+
+	class intSlider {
+		float sliderPosOffset = 0;
+		bool hold = false;
+
+	public:
+		const char* label;
+		vec2 position;
+		vec2 size;
+		vec2 relPos;
+		int max;
+		int current;
+
+		bool isHover(externalHandler* ehnd) {
+			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
+				return true;
+			}
+		}
+
+		bool isClicked(externalHandler* ehnd) {
+			if (isHover(ehnd) && ehnd->mouseDown) {
+				return true;
+			}
+		}
+
+		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition) {
+			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
+			float pixelValue = max / (size.x - 20);
+
+			if (this->isHover(ehnd) || hold) {
+				ehnd->mouseIsOnControl = true;
+				if (ehnd->mouseDown) {
+					hold = true;
+					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
+					if (newPosOffset < 0.f) {
+						newPosOffset = 0.f;
+						current = 0;
+					}
+					else if (newPosOffset > size.x - 21) {
+						newPosOffset = size.x - 21;
+						current = max;
+					}
+					else {
+						current = (int)floor(pixelValue * newPosOffset);
+					}
+
+					sliderPosOffset = newPosOffset;
+				}
+			}
+			if (!ehnd->mouseDown) {
+				hold = false;
+			}
+
+			DrawFilledRect(relPos.x, relPos.y, size.x, size.y, white, pDev);
+			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
+			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
+			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
 	};
 
@@ -201,21 +357,39 @@ namespace fennUi {
 		}
 	};
 
-	class basicWindow {
+	class blabel {
+	public:
+		const char* text;
 		vec2 position;
-		vec2 size;
-		const char* label;
-		vec2 mouseStoredOffset;
-		int uid;
+		vec2 relPos;
+		int fontSize;
+
+		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition) {
+			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
+			DrawTextC(text, relPos.x, relPos.y, fontSize, white, pDev);
+		}
+	};
+
+	class container {
 		LPDIRECT3DDEVICE9 pDev;
+		vec2 position;
+		vec2 relPos;
+		vec2 size;
+		int uid;
+
 		std::vector<button> objButtons = {};
 		std::vector<checkbox> objCheckbox = {};
+		std::vector<floatSlider> objFloatSliders = {};
+		std::vector<intSlider> objIntSliders = {};
 		std::vector<flabel> objLabels = {};
+		std::vector<blabel> objBasicLabels = {};
 
 	public:
-		void init(const char* label, vec2 startPosition, vec2 startSize, int uid, LPDIRECT3DDEVICE9 pDev) {
+		bool enabled = true;
+		bool outline = false;
+
+		void init( vec2 startPosition, vec2 startSize, int uid, LPDIRECT3DDEVICE9 pDev) {
 			this->position = startPosition;
-			this->label = label;
 			this->size = startSize;
 			this->uid = uid;
 			this->pDev = pDev;
@@ -240,6 +414,24 @@ namespace fennUi {
 			objCheckbox.push_back(tmp);
 		}
 
+		void addFloatSlider(const char* label, vec2 pos, vec2 size, float max) {
+			floatSlider tmp;
+			tmp.label = label;
+			tmp.position = pos;
+			tmp.size = size;
+			tmp.max = max;
+			objFloatSliders.push_back(tmp);
+		}
+
+		void addIntSlider(const char* label, vec2 pos, vec2 size, int max) {
+			intSlider tmp;
+			tmp.label = label;
+			tmp.position = pos;
+			tmp.size = size;
+			tmp.max = max;
+			objIntSliders.push_back(tmp);
+		}
+
 		void addLabel(packagedText* plt, vec2 pos, int fontSize) {
 			flabel tmp;
 			tmp.text = plt;
@@ -248,14 +440,80 @@ namespace fennUi {
 			objLabels.push_back(tmp);
 		}
 
+
+		void addBasicLabel(const char* plt, vec2 pos, int fontSize) {
+			blabel tmp;
+			tmp.text = plt;
+			tmp.position = pos;
+			tmp.fontSize = fontSize;
+			objBasicLabels.push_back(tmp);
+		}
+
+
+		void draw(externalHandler* ehnd, vec2 parentPosition) {
+			if (!enabled) {
+				return;
+			}
+			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
+			DrawFilledRect(relPos.x, relPos.y, size.x, size.y, grey, pDev);
+
+			for (button& i : objButtons) {
+				i.draw(ehnd, pDev, relPos, 0);
+			}
+			for (checkbox& i : objCheckbox) {
+				i.draw(ehnd, pDev, relPos, 0);
+			}
+			for (floatSlider& i : objFloatSliders) {
+				i.draw(ehnd, pDev, relPos);
+			}
+			for (intSlider& i : objIntSliders) {
+				i.draw(ehnd, pDev, relPos);
+			}
+			for (flabel& i : objLabels) {
+				i.draw(ehnd, pDev, relPos);
+			}
+			for (blabel& i : objBasicLabels) {
+				i.draw(ehnd, pDev, relPos);
+			}
+
+			if (outline) {
+				drawRect(relPos, size.x, size.y, black, pDev);
+			}
+		}
+	};
+
+	class basicWindow {
+		vec2 position;
+		vec2 size;
+		const char* label;
+		vec2 mouseStoredOffset;
+		int uid;
+		LPDIRECT3DDEVICE9 pDev;
+		std::vector<container*> containers = {};
+
+	public:
+		bool resizable = true;
+
+		void init(const char* label, vec2 startPosition, vec2 startSize, int uid, LPDIRECT3DDEVICE9 pDev) {
+			this->position = startPosition;
+			this->label = label;
+			this->size = startSize;
+			this->uid = uid;
+			this->pDev = pDev;
+		}
+
+		void addContainer(container* container) {
+			this->containers.push_back(container);
+		}
+
 		void draw(externalHandler* ehnd) {
 			if (ehnd->mouseDown) {
-				if (ehnd->focusedId == -1 && mouseHasJustClicked(ehnd) && isPointInRegion(ehnd->frameMousePos, { this->position.x + this->size.x - 20,  this->position.y + this->size.y - 20 }, 20, 20)) {
+				if (resizable && ehnd->focusedId == -1 && mouseHasJustClicked(ehnd) && isPointInRegion(ehnd->frameMousePos, { this->position.x + this->size.x - 20,  this->position.y + this->size.y - 20 }, 20, 20)) {
 					this->mouseStoredOffset = getOffset(ehnd->frameMousePos, this->position);
 					ehnd->focusedId = uid;
 					ehnd->focusedFunction = 1;
 				}
-				if (ehnd->focusedId == uid && ehnd->focusedFunction == 1) {
+				if (ehnd->focusedId == uid && ehnd->focusedFunction == 1 && resizable) {
 					vec2 newSize = { 0, 0 };
 
 					newSize.x = ((ehnd->frameMousePos.x + 10) - this->position.x);
@@ -269,131 +527,28 @@ namespace fennUi {
 					}
 				}
 
-				if (ehnd->focusedId == -1 && mouseHasJustClicked(ehnd) && isPointInRegion(ehnd->frameMousePos, position, size.x, size.y)) {
+				if (ehnd->focusedId == -1 && mouseHasJustClicked(ehnd) && isPointInRegion(ehnd->frameMousePos, position, size.x, size.y) && !ehnd->mouseIsOnControl) {
 					this->mouseStoredOffset = getOffset(ehnd->frameMousePos, this->position);
 					ehnd->focusedId = uid;
 					ehnd->focusedFunction = 2;
 				}
-				if (ehnd->focusedId == uid && ehnd->focusedFunction == 2) {
+				if (ehnd->focusedId == uid && ehnd->focusedFunction == 2 && !ehnd->mouseIsOnControl) {
 					position.x = (ehnd->frameMousePos.x - mouseStoredOffset.x);
 					position.y = (ehnd->frameMousePos.y - mouseStoredOffset.y);
 				}
 			}
 
 			DrawFilledRect(position.x, position.y, size.x, size.y, grey, pDev);
-			DrawFilledRect(position.x + size.x - 20, position.y + size.y - 20, 20, 20, white, pDev);
+			if (resizable) { DrawFilledRect(position.x + size.x - 20, position.y + size.y - 20, 20, 20, white, pDev); }
 			DrawTextC(label, position.x + 5, position.y + 2, 20, white, pDev);
 			DrawLine(position.x, position.y + 25, position.x + size.x, position.y + 25, 1, white, pDev);
 
-			int yoff = 32;
-
-			for (button i : objButtons) {
-				i.draw(ehnd, pDev, position, yoff);
-				yoff += 25;
-			}
-			for (checkbox i : objCheckbox) {
-				i.draw(ehnd, pDev, position, yoff);
-				yoff += 25;
-			}
-			for (flabel i : objLabels) {
-				i.draw(ehnd, pDev, position);
-				yoff += 25;
+			ehnd->mouseIsOnControl = false;
+			for (container* cnt : containers) {
+				cnt->draw(ehnd, position);
 			}
 
-			DrawLine(position.x, position.y, (position.x + size.x), position.y, 1, white, pDev); //top
-			DrawLine(position.x, position.y, position.x , position.y + size.y, 1, white, pDev); //left
-			DrawLine(position.x + size.x, position.y, position.x + size.x, position.y + size.y, 1, white, pDev); //right
-			DrawLine(position.x, position.y + size.y, position.x + size.x, position.y + size.y, 1, white, pDev); //bottom
+			drawRect(position, size.x, size.y, white, pDev);
 		}
 	};
-
-
-	/*void testBox(preservationManager* pmg, vec2 position, vec2 size, LPDIRECT3DDEVICE9 pDev) {
-		if (isPointInRegion(pmg->frameMousePos, position, size.x, size.y) && pmg->mouseDown) {
-			DrawFilledRect(position.x, position.y, size.x, size.y, red, pDev);
-		}
-		else if (isPointInRegion(pmg->frameMousePos, position, size.x, size.y)) {
-			DrawFilledRect(position.x, position.y, size.x, size.y, green, pDev);
-		}
-		else {
-			DrawFilledRect(position.x, position.y, size.x, size.y, blue, pDev);
-		}
-	}*/
-
-	/*class preservationManager {
-	public:
-		std::vector<preservedInfo> presArray = { };
-		vec2 frameMousePos = { 0, 0 };
-		bool mouseDown = false;
-		bool lastMouseDown = false;
-		vec2 mouseStoredOffset = { 0, 0 };
-		int singleWindowHandler = -1;
-		int singleWindowFunction = -1;
-
-		void update(HWND hWnd) {
-			lastMouseDown = mouseDown;
-			POINT tmp = GetMousePos(hWnd);
-			frameMousePos = { (float)tmp.x, (float)tmp.y };
-			mouseDown = (((GetAsyncKeyState(VK_LBUTTON) >> 15) & 0x0001) == 0x0001);
-			if (!mouseDown) {
-				singleWindowHandler = -1;
-				singleWindowFunction = -1;
-			}
-		}
-	};*/
-
-	/*void drawWindow(preservationManager* pmg, int winID, const char* title, vec2 startPos, vec2 startSize, LPDIRECT3DDEVICE9 pDev) {
-		int windowId = winID;
-		const char* wndTitle = title;
-		bool existsInPreservCache = false;
-		int uid = 0;
-
-		for (auto i : pmg->presArray) {
-			if (i.uid == winID) {
-				existsInPreservCache = true;
-
-				if (pmg->mouseDown) {
-					if (pmg->singleWindowHandler == -1 && mouseHasJustClicked(pmg) && isPointInRegion(pmg->frameMousePos, { i.position.x + i.size.x - 20, i.position.y + i.size.y - 20 }, 20, 20)) {
-						pmg->mouseStoredOffset = getOffset(pmg->frameMousePos, i.position);
-						pmg->singleWindowHandler = uid;
-						pmg->singleWindowFunction = 1;
-					}
-					if (pmg->singleWindowHandler == uid && pmg->singleWindowFunction == 1) {
-						vec2 newSize = { 0, 0 };
-
-						newSize.x = ((pmg->frameMousePos.x + 10) - pmg->presArray[uid].position.x);
-						newSize.y = ((pmg->frameMousePos.y + 10) - pmg->presArray[uid].position.y);
-
-						if (newSize.x > 50 && newSize.y > 50) {
-							pmg->presArray[uid].size = newSize;
-						}
-					}
-
-					if (pmg->singleWindowHandler == -1 && mouseHasJustClicked(pmg) && isPointInRegion(pmg->frameMousePos, i.position, i.size.x, i.size.y)) {
-						pmg->mouseStoredOffset = getOffset(pmg->frameMousePos, i.position);
-						pmg->singleWindowHandler = uid;
-						pmg->singleWindowFunction = 2;
-					}
-					if (pmg->singleWindowHandler == uid && pmg->singleWindowFunction == 2) {
-						pmg->presArray[uid].position.x = (pmg->frameMousePos.x - pmg->mouseStoredOffset.x);
-						pmg->presArray[uid].position.y = (pmg->frameMousePos.y - pmg->mouseStoredOffset.y);
-					}
-				}
-
-				DrawFilledRect(i.position.x, i.position.y, i.size.x, i.size.y, grey, pDev);
-				DrawFilledRect(i.position.x + i.size.x - 20, i.position.y + i.size.y - 20, 20, 20, white, pDev);
-				DrawTextC(title, i.position.x + 5, i.position.y + 5, white, pDev);
-				DrawLine(i.position.x, i.position.y + 25, i.position.x + i.size.x, i.position.y + 25, 2, white, pDev);
-
-				testBox(pmg, { i.position.x + 5, i.position.y + 30 }, { 50, 25 }, pDev);
-			}
-			else {
-				uid += 1;
-			}
-		}
-		if (!existsInPreservCache) {
-			pmg->presArray.push_back({ winID, startPos, startSize });
-		}
-	}*/
 }
-
