@@ -58,12 +58,19 @@ bool InitD3D(HWND hWnd, UINT uWidth, UINT uHeight)
 	sprintf_s( szDevice, 256, "pDevice: 0x%p", &pDevice );
 
 	// Create font to draw string
-	hr = D3DXCreateFont( pDevice, 21, 0, FW_NORMAL, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, _T( "Consolas" ), &pFont );
+	hr = D3DXCreateFont( pDevice, 15, 0, FW_NORMAL, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, _T( "Lucida console" ), &pFont );
 	if (FAILED( hr ))
 	{
 		MessageBox( NULL, _T( "Failed to create font." ), _T( "Error" ), MB_ICONERROR | MB_OK );
 		return false;
 	}
+
+	//hr = D3DXCreateSprite(pDevice, &pSprite);
+	//if (FAILED(hr))
+	//{
+	//	MessageBox(NULL, _T("Failed to create sprite."), _T("Error"), MB_ICONERROR | MB_OK);
+	//	return false;
+	//}
 
 	MoveWindow(hWnd, 100, 100, 1296, 757, false);
 	return true;
@@ -79,6 +86,8 @@ fennUi::container ct3;
 bool showP1 = false;
 bool showP2 = false;
 bool showP3 = false;
+int iOutPutTest = 0;
+float fOutPutTest = 0.f;
 
 bool idc = false;
 
@@ -100,6 +109,7 @@ void Render(NativeWindow& wnd, HWND hWnd)
 
 	pDevice->BeginScene();
 	pDevice->Clear( 1, nullptr, D3DCLEAR_TARGET, black, 1.0f, 0 );
+	//pSprite->Begin(D3DXSPRITE_ALPHABLEND);
 
 	RECT rc_dev = { 0, 0, WND_WIDTH, WND_HEIGHT };
 	RECT rc_time = { 0, 25, WND_WIDTH, WND_HEIGHT };
@@ -109,22 +119,22 @@ void Render(NativeWindow& wnd, HWND hWnd)
 		window1.resizable = false;
 
 		ctlButtons.init({ 5, 30 }, { 310, 20 }, 1, pDevice);
-		ctlButtons.addButton("ESP",  { 0,   0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP1);
-		ctlButtons.addButton("AIM",  { 105, 0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP2);
-		ctlButtons.addButton("MISC", { 210, 0 }, { 100, 20 }, fennUi::buttonMode::BMODE_SINGLE, &showP3);
+		ctlButtons.addButton("ESP",  { 0,   0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP1);
+		ctlButtons.addButton("AIM",  { 105, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP2);
+		ctlButtons.addButton("MISC", { 210, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP3);
 
 		ct1.init({ 5, 55 }, { 310, 200 }, 2, pDevice);
 		ct1.addBasicLabel("ESP", { 5, 5 }, 15);
-		ct1.addCheckbox("Friendlies", { 5, 25 }, { 125, 20 }, &idc);
-		ct1.addCheckbox("Enemies", { 5, 50 }, { 125, 20 }, &idc);
-		ct1.addFloatSlider("na", { 5, 75 }, { 200, 20 }, 1);
-		ct1.addIntSlider("na", { 5, 100 }, { 200, 20 }, 100);
+		ct1.addCheckbox("Friendlies", { 5, 25 }, 125, &idc);
+		ct1.addCheckbox("Enemies", { 5, 50 }, 125, &idc);
+		ct1.addFloatSlider({ 5, 75 }, 200, 1, &fOutPutTest);
+		ct1.addIntSlider({ 5, 100 }, 200, 50, &iOutPutTest);
 		ct1.outline = true;
 		ct1.enabled = true;
 
 		ct2.init({ 5, 55 }, { 310, 200 }, 3, pDevice);
 		ct2.addBasicLabel("this is page 2", { 5, 5 }, 15);
-		ct2.addCheckbox("Checkbox", { 5, 25 }, { 100, 20 }, &idc);
+		ct2.addCheckbox("Checkbox", { 5, 25 }, 100, &idc);
 		ct2.outline = true;
 		ct2.enabled = false;
 
@@ -148,12 +158,16 @@ void Render(NativeWindow& wnd, HWND hWnd)
 		}
 	}
 
+	RECT rc = { 100, 100, WND_WIDTH, WND_HEIGHT };
+	DrawTextC(szDevice, 100, 115, 15, white, pDevice);
+
 	//background info
 	sprintf_s(exTimeTxt, 256, "FPS    : %i", (int)(1000.f / execTime));
 	sprintf_s(mps, 64, "MPX: %i | MPY: %i", exhndlr.frameMousePos.x, exhndlr.frameMousePos.y);
 	DrawTextC("D3D9 Test Environment | [F1] Menu", 10, 10, 15, white, pDevice);
 	DrawTextC(exTimeTxt, 10, 25, 15, white, pDevice);
 	fennUi::drawCursor(&exhndlr, pDevice);
+	//pSprite->End();
 	pDevice->EndScene();
 	pDevice->Present( 0, 0, 0, 0 );
 	auto endTime = execTimer.now();

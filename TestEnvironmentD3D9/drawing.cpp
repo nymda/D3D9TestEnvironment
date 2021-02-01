@@ -113,7 +113,7 @@ void DrawTextC(const char* text, float x, float y, int size, D3DCOLOR color, LPD
 	if (initFonts) {
 		for (int i = 0; i < 20; i++) {
 			ID3DXFont* tmpFont;
-			D3DXCreateFont(pDevice, i, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas", &tmpFont);
+			D3DXCreateFont(pDevice, i, 0, FW_EXTRALIGHT, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida console", &tmpFont);
 			std::cout << i << std::endl;
 			fonts.push_back(tmpFont);
 		}

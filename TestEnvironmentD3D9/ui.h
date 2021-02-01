@@ -4,11 +4,9 @@
 #include "drawing.h"
 #include <vector>
 #include <iostream>
+#include <sstream>
 
 namespace fennUi {
-	//run on a loop - as in imgui
-
-
 
 	enum buttonMode {
 		BMODE_SINGLE,
@@ -172,7 +170,7 @@ namespace fennUi {
 				*val = false;
 			}
 
-			DrawTextC(label, relPos.x + 5, relPos.y + 2, 16, black, pDev);
+			DrawTextC(label, relPos.x + 5, relPos.y + 2, 15, black, pDev);
 
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
@@ -222,7 +220,7 @@ namespace fennUi {
 
 			if (*val) { DrawFilledRect(relPos.x + 4, relPos.y + 4, size.y - 8, size.y - 8, white, pDev); }
 
-			DrawTextC(label, relPos.x + (size.y - 4) + 5, relPos.y + 2, 18, black, pDev);
+			DrawTextC(label, relPos.x + (size.y - 4) + 5, relPos.y + 4, 15, black, pDev);
 
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
@@ -231,6 +229,7 @@ namespace fennUi {
 	class floatSlider {
 		float sliderPosOffset = 0;
 		bool hold = false;
+		bool active = false;
 
 	public:
 		const char* label;
@@ -238,7 +237,7 @@ namespace fennUi {
 		vec2 size;
 		vec2 relPos;
 		float max;
-		float current;
+		float* output;
 
 		bool isHover(externalHandler* ehnd) {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
@@ -256,22 +255,29 @@ namespace fennUi {
 			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
 			float pixelValue = max / (size.x - 20);
 
+			if (mouseHasJustClicked(ehnd) && this->isHover(ehnd)) {
+				active = true;
+			}
+			if (!ehnd->mouseDown) {
+				active = false;
+			}
+
 			if (this->isHover(ehnd) || hold) {
 				ehnd->mouseIsOnControl = true;
 				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, lightGrey, pDev);
-				if (ehnd->mouseDown) {
+				if (ehnd->mouseDown && active) {
 					hold = true;
 					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
 					if (newPosOffset < 0.f) {
 						newPosOffset = 0.f;
-						current = 0.f;
+						*output = 0.f;
 					}
 					else if (newPosOffset > size.x - 21) {
 						newPosOffset = size.x - 21;
-						current = max;
+						*output = max;
 					}
 					else {
-						current = (pixelValue * newPosOffset);
+						*output = (pixelValue * newPosOffset);
 					}
 					
 					sliderPosOffset = newPosOffset;
@@ -284,9 +290,11 @@ namespace fennUi {
 			if (!ehnd->mouseDown) {
 				hold = false;
 			}
-			
+			std::string strVal = std::to_string(*output);
+			int index = strVal.find(".", 0);
+
 			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
-			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
+			DrawTextC(strVal.substr(0, index + 4).c_str(), relPos.x + 5, relPos.y + 4, 15, black, pDev);
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
 	};
@@ -294,6 +302,7 @@ namespace fennUi {
 	class intSlider {
 		float sliderPosOffset = 0;
 		bool hold = false;
+		bool active = false;
 
 	public:
 		const char* label;
@@ -301,7 +310,7 @@ namespace fennUi {
 		vec2 size;
 		vec2 relPos;
 		int max;
-		int current;
+		int* output;
 
 		bool isHover(externalHandler* ehnd) {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
@@ -319,22 +328,29 @@ namespace fennUi {
 			relPos = { parentPosition.x + position.x, parentPosition.y + position.y };
 			float pixelValue = max / (size.x - 20);
 
+			if (mouseHasJustClicked(ehnd) && this->isHover(ehnd)) {
+				active = true;
+			}
+			if (!ehnd->mouseDown) {
+				active = false;
+			}
+
 			if (this->isHover(ehnd) || hold) {
 				ehnd->mouseIsOnControl = true;
 				DrawFilledRect(relPos.x, relPos.y, size.x, size.y, lightGrey, pDev);
-				if (ehnd->mouseDown) {
+				if (ehnd->mouseDown && active) {
 					hold = true;
 					float newPosOffset = (ehnd->frameMousePos.x - 10) - relPos.x;
 					if (newPosOffset < 0.f) {
 						newPosOffset = 0.f;
-						current = 0;
+						*output = 0;
 					}
 					else if (newPosOffset > size.x - 21) {
 						newPosOffset = size.x - 21;
-						current = max;
+						*output = max;
 					}
 					else {
-						current = (int)floor(pixelValue * newPosOffset);
+						*output = (int)floor(pixelValue * newPosOffset);
 					}
 
 					sliderPosOffset = newPosOffset;
@@ -349,7 +365,7 @@ namespace fennUi {
 			}
 
 			DrawFilledRect(relPos.x + 1.f + sliderPosOffset, relPos.y + 1.f, 20, size.y - 2.f, grey, pDev);
-			DrawTextC(std::to_string(current).c_str(), relPos.x + 2, relPos.y, 20, black, pDev);
+			DrawTextC(std::to_string(*output).c_str(), relPos.x + 5, relPos.y + 4, 15, black, pDev);
 			drawRect(relPos, size.x, size.y - 1, black, pDev);
 		}
 	};
@@ -405,40 +421,40 @@ namespace fennUi {
 			this->pDev = pDev;
 		}
 
-		void addButton(const char* label, vec2 pos, vec2 size, buttonMode mode, bool* out) {
+		void addButton(const char* label, vec2 pos, float width, buttonMode mode, bool* out) {
 			button tmp;
 			tmp.label = label;
 			tmp.position = pos;
-			tmp.size = size;
+			tmp.size = { width, 20 };
 			tmp.mode = mode;
 			tmp.val = out;
 			objButtons.push_back(tmp);
 		}
 
-		void addCheckbox(const char* label, vec2 pos, vec2 size, bool* out) {
+		void addCheckbox(const char* label, vec2 pos, float width, bool* out) {
 			checkbox tmp;
 			tmp.label = label;
 			tmp.position = pos;
-			tmp.size = size;
+			tmp.size = { width, 20 };
 			tmp.val = out;
 			objCheckbox.push_back(tmp);
 		}
 
-		void addFloatSlider(const char* label, vec2 pos, vec2 size, float max) {
+		void addFloatSlider(vec2 pos, float width, float max, float* output) {
 			floatSlider tmp;
-			tmp.label = label;
 			tmp.position = pos;
-			tmp.size = size;
+			tmp.size = { width, 20 };
 			tmp.max = max;
+			tmp.output = output;
 			objFloatSliders.push_back(tmp);
 		}
 
-		void addIntSlider(const char* label, vec2 pos, vec2 size, int max) {
+		void addIntSlider(vec2 pos, float width, int max, int* output) {
 			intSlider tmp;
-			tmp.label = label;
 			tmp.position = pos;
-			tmp.size = size;
+			tmp.size = { width, 20 };
 			tmp.max = max;
+			tmp.output = output;
 			objIntSliders.push_back(tmp);
 		}
 
@@ -550,7 +566,7 @@ namespace fennUi {
 
 			DrawFilledRect(position.x, position.y, size.x, size.y, grey, pDev);
 			if (resizable) { DrawFilledRect(position.x + size.x - 20, position.y + size.y - 20, 20, 20, white, pDev); }
-			DrawTextC(label, position.x + 5, position.y + 2, 20, white, pDev);
+			DrawTextC(label, position.x + 5, position.y + 5, 19, white, pDev);
 			DrawLine(position.x, position.y + 25, position.x + size.x, position.y + 25, 1, white, pDev);
 
 			ehnd->mouseIsOnControl = false;
