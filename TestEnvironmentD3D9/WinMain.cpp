@@ -76,6 +76,8 @@ bool InitD3D(HWND hWnd, UINT uWidth, UINT uHeight)
 	return true;
 }
 
+bool t1, t2, t3, t4, t5;
+
 fennUi::externalHandler exhndlr;
 fennUi::basicWindow window1;
 fennUi::container ctlButtons;
@@ -115,26 +117,26 @@ void Render(NativeWindow& wnd, HWND hWnd)
 	RECT rc_time = { 0, 25, WND_WIDTH, WND_HEIGHT };
 
 	if (firstFrame) {
-		window1.init("FennUI", { 200, 100 }, { 320, 260 }, 0, pDevice);
+		window1.init("UI Test", { 200, 100 }, { 320, 260 }, 0, pDevice);
 		window1.resizable = false;
 
 		ctlButtons.init({ 5, 30 }, { 310, 20 }, 1, pDevice);
-		ctlButtons.addButton("ESP",  { 0,   0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP1);
-		ctlButtons.addButton("AIM",  { 105, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP2);
-		ctlButtons.addButton("MISC", { 210, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP3);
+		ctlButtons.addButton("Page 1", { 0,   0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP1);
+		ctlButtons.addButton("Page 2", { 105, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP2);
+		ctlButtons.addButton("Page 3", { 210, 0 }, 100, fennUi::buttonMode::BMODE_SINGLE, &showP3);
 
 		ct1.init({ 5, 55 }, { 310, 200 }, 2, pDevice);
-		ct1.addBasicLabel("ESP", { 5, 5 }, 15);
-		ct1.addCheckbox("Friendlies", { 5, 25 }, 125, &idc);
-		ct1.addCheckbox("Enemies", { 5, 50 }, 125, &idc);
+		ct1.addBasicLabel("Page 1", { 5, 5 }, 15);
+		ct1.addButton("Button", { 5, 25 }, 125, fennUi::buttonMode::BMODE_SINGLE, &t1);
+		ct1.addCheckbox("Checkbox", { 5, 50 }, 125, &t2);
 		ct1.addFloatSlider({ 5, 75 }, 200, 1, &fOutPutTest);
 		ct1.addIntSlider({ 5, 100 }, 200, 50, &iOutPutTest);
 		ct1.outline = true;
 		ct1.enabled = true;
 
 		ct2.init({ 5, 55 }, { 310, 200 }, 3, pDevice);
-		ct2.addBasicLabel("this is page 2", { 5, 5 }, 15);
-		ct2.addCheckbox("Checkbox", { 5, 25 }, 100, &idc);
+		ct2.addBasicLabel("Page 2", { 5, 5 }, 15);
+		ct2.addLabel(&plt, { 5, 25 }, 15);
 		ct2.outline = true;
 		ct2.enabled = false;
 
@@ -144,8 +146,9 @@ void Render(NativeWindow& wnd, HWND hWnd)
 		firstFrame = false;
 	}
 
-	exhndlr.update(hWnd);
+	exhndlr.update(hWnd, pDevice);
 
+	sprintf_s(plt.labelText, 128, "Active label : %i", (int)(frameCounter));
 	if (drawMenu) {
 		window1.draw(&exhndlr);
 		if (showP1) {

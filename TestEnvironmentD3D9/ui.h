@@ -38,7 +38,8 @@ namespace fennUi {
 		bool mouseIsOnControl = false;
 		bool controlIsInUse = false;
 
-		void update(HWND hWnd) {
+		void update(HWND hWnd, LPDIRECT3DDEVICE9 pDev) {
+			pDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 			lastMouseDown = mouseDown;
 			POINT tmp = GetMousePos(hWnd);
 			frameMousePos = { (float)tmp.x, (float)tmp.y };
@@ -89,7 +90,6 @@ namespace fennUi {
 			cursorMain_B,
 		};
 
-		pDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 		pDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 6, pVertex, sizeof(Vert));
 		pDev->DrawPrimitiveUP(D3DPT_LINESTRIP, 5, pVertexOutline, sizeof(Vert));
 	}
@@ -130,12 +130,14 @@ namespace fennUi {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
 				return true;
 			}
+			return false;
 		}
 
 		bool isClicked(externalHandler* ehnd) {
 			if (isHover(ehnd) && ehnd->mouseDown) {
 				return true;
 			}
+			return false;
 		}
 
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition, int yOffset) {
@@ -188,12 +190,14 @@ namespace fennUi {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
 				return true;
 			}
+			return false;
 		}
 
 		bool isClicked(externalHandler* ehnd) {
 			if (isHover(ehnd) && ehnd->mouseDown) {
 				return true;
 			}
+			return false;
 		}
 
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition, int yOffset) {
@@ -243,12 +247,14 @@ namespace fennUi {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
 				return true;
 			}
+			return false;
 		}
 
 		bool isClicked(externalHandler* ehnd) {
 			if (isHover(ehnd) && ehnd->mouseDown) {
 				return true;
 			}
+			return false;
 		}
 
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition) {
@@ -316,12 +322,14 @@ namespace fennUi {
 			if (isPointInRegion(ehnd->frameMousePos, relPos, size.x, size.y)) {
 				return true;
 			}
+			return false;
 		}
 
 		bool isClicked(externalHandler* ehnd) {
 			if (isHover(ehnd) && ehnd->mouseDown) {
 				return true;
 			}
+			return false;
 		}
 
 		void draw(externalHandler* ehnd, LPDIRECT3DDEVICE9 pDev, vec2 parentPosition) {
